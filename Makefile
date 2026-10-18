@@ -11,7 +11,7 @@ fmt:
 fmt-check:
 	@unformatted="$$(gofmt -l $(GO_FILES))"; \
 	if [ -n "$$unformatted" ]; then \
-		printf 'These Go files need formatting:\n%s\nRun make fmt to fix them.\n' "$unformatted"; \
+		printf 'These Go files need formatting:\n%s\nRun make fmt to fix them.\n' "$$unformatted"; \
 		gofmt -d $(GO_FILES); \
 		exit 1; \
 	fi

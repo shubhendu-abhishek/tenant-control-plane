@@ -57,7 +57,6 @@ func TestWorkerHonorsDelayBounds(t *testing.T) {
 	}
 }
 
-
 func TestWorkerOutcomeIsStableAcrossTaskRedelivery(t *testing.T) {
 	publisher := &recordingPublisher{}
 	task := domain.Task{ID: "task-stable-outcome", TenantID: "tenant-456", Type: domain.TaskDeploy, Status: domain.TaskAccepted}

@@ -300,7 +300,6 @@ func processTask(ctx context.Context, publisher ProgressPublisher, task domain.T
 	return nil
 }
 
-
 // taskShouldFail derives a stable simulated outcome from the task ID. A task
 // redelivered after an uncertain broker acknowledgement must not randomly
 // switch from failed to done (or vice versa).
