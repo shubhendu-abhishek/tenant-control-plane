@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="720" viewBox="0 0 1360 720" role="img" aria-labelledby="title desc">
+<title id="title">Tenant Provisioning Control Plane — System Flow</title>
+<desc id="desc">REST API, PostgreSQL transactional outbox, RabbitMQ task and progress queues, worker simulator and dead-letter queue.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#46566b"/></marker><marker id="greenarrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#43845d"/></marker></defs>
+<rect width="1360" height="720" fill="#fff"/>
+<text x="680" y="46" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#172b4d">Tenant Provisioning Control Plane</text>
+<text x="680" y="75" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#52657d">Durable writes · at-least-once messaging · idempotent progress updates</text>
+<g font-family="Arial,sans-serif" text-anchor="middle" fill="#172b4d" stroke-width="2">
+<rect x="45" y="150" width="190" height="90" rx="15" fill="#e8f1ff" stroke="#6688bd"/><text x="140" y="187" font-size="18" font-weight="700" stroke="none">API Client</text><text x="140" y="213" font-size="13" stroke="none">REST / JSON</text>
+<rect x="300" y="150" width="220" height="90" rx="15" fill="#ddebff" stroke="#6688bd"/><text x="410" y="186" font-size="18" font-weight="700" stroke="none">Go Control Plane</text><text x="410" y="213" font-size="13" stroke="none">HTTP API + consumer</text>
+<path d="M235 195 H296" stroke="#46566b" marker-end="url(#arrow)" fill="none"/><text x="265" y="182" font-size="12" stroke="none">requests</text>
+<rect x="600" y="120" width="260" height="150" rx="15" fill="#e5f6eb" stroke="#43845d"/><text x="730" y="153" font-size="18" font-weight="700" stroke="none">PostgreSQL</text><text x="730" y="183" font-size="14" stroke="none">Tenants + Tasks</text><text x="730" y="206" font-size="14" stroke="none">Transactional Outbox</text><text x="730" y="229" font-size="14" stroke="none">Processed update IDs</text>
+<path d="M520 195 H596" stroke="#46566b" marker-end="url(#arrow)" fill="none"/><text x="558" y="164" font-size="12" stroke="none">single TX</text>
+<rect x="600" y="330" width="260" height="84" rx="15" fill="#fff1d6" stroke="#b98935"/><text x="730" y="361" font-size="17" font-weight="700" stroke="none">Outbox Dispatcher</text><text x="730" y="385" font-size="13" stroke="none">retry + publish confirm</text>
+<path d="M730 270 V326" stroke="#46566b" marker-end="url(#arrow)" fill="none"/><text x="803" y="303" font-size="12" stroke="none">committed rows</text>
+<rect x="965" y="330" width="190" height="84" rx="15" fill="#f2e8ff" stroke="#8767a8"/><text x="1060" y="361" font-size="17" font-weight="700" stroke="none">Task Queue</text><text x="1060" y="385" font-size="13" stroke="none">RabbitMQ</text>
+<path d="M860 372 H961" stroke="#46566b" marker-end="url(#arrow)" fill="none"/><text x="910" y="356" font-size="12" stroke="none">task event</text>
+<rect x="965" y="480" width="190" height="84" rx="15" fill="#ddebff" stroke="#6688bd"/><text x="1060" y="512" font-size="17" font-weight="700" stroke="none">Go Worker</text><text x="1060" y="535" font-size="13" stroke="none">delay / fail rate</text>
+<path d="M1060 414 V476" stroke="#46566b" marker-end="url(#arrow)" fill="none"/><text x="1120" y="450" font-size="12" stroke="none">consume</text>
+<rect x="600" y="480" width="260" height="84" rx="15" fill="#f2e8ff" stroke="#8767a8"/><text x="730" y="512" font-size="17" font-weight="700" stroke="none">Progress Queue</text><text x="730" y="535" font-size="13" stroke="none">in_progress / terminal</text>
+<path d="M961 522 H864" stroke="#46566b" marker-end="url(#arrow)" fill="none"/><text x="912" y="505" font-size="12" stroke="none">publish updates</text>
+<path d="M600 522 H550 V240 H520" stroke="#43845d" marker-end="url(#greenarrow)" fill="none"/><text x="566" y="500" transform="rotate(-90 566 500)" font-size="12" stroke="none">dedupe + apply transaction</text>
+<rect x="965" y="610" width="190" height="66" rx="12" fill="#fde8e7" stroke="#b44c47"/><text x="1060" y="638" font-size="16" font-weight="700" stroke="none">Progress DLQ</text><text x="1060" y="658" font-size="12" stroke="none">poison messages</text>
+<path d="M1155 522 H1200 V642 H1159" stroke="#b44c47" stroke-dasharray="6 5" marker-end="url(#arrow)" fill="none"/><text x="1245" y="583" font-size="12" stroke="none">malformed</text>
+</g>
+<text x="44" y="692" font-family="Arial,sans-serif" font-size="12" fill="#52657d">Terminal task updates change tenant state and increment tenant version; stale updates cannot regress terminal states.</text>
+</svg>

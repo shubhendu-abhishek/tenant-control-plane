@@ -1,0 +1,78 @@
+name: tenant-control-plane
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-controlplane}
+      POSTGRES_USER: ${POSTGRES_USER:-controlplane}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-only-change-me}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-controlplane}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-local-dev-only-change-me}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  control-plane:
+    build:
+      context: .
+      target: runtime
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-controlplane}:${POSTGRES_PASSWORD:-local-dev-only-change-me}@postgres:5432/${POSTGRES_DB:-controlplane}?sslmode=disable
+      AMQP_URL: amqp://${RABBITMQ_USER:-controlplane}:${RABBITMQ_PASSWORD:-local-dev-only-change-me}@rabbitmq:5672/
+      HTTP_ADDR: :8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: runtime
+    entrypoint: ["/app/worker"]
+    environment:
+      AMQP_URL: amqp://${RABBITMQ_USER:-controlplane}:${RABBITMQ_PASSWORD:-local-dev-only-change-me}@rabbitmq:5672/
+      WORKER_FAIL_RATE: ${WORKER_FAIL_RATE:-0}
+      WORKER_MIN_DELAY_MS: ${WORKER_MIN_DELAY_MS:-500}
+      WORKER_MAX_DELAY_MS: ${WORKER_MAX_DELAY_MS:-2500}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  tests:
+    build:
+      context: .
+      target: builder
+    entrypoint: ["make", "check"]
+    environment:
+      TEST_DATABASE_URL: postgres://${POSTGRES_USER:-controlplane}:${POSTGRES_PASSWORD:-local-dev-only-change-me}@postgres:5432/${POSTGRES_DB:-controlplane}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ["tools"]
+
+volumes:
+  postgres-data:

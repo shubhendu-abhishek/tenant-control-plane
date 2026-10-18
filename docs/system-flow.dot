@@ -1,0 +1,23 @@
+digraph TenantControlPlane {
+  graph [rankdir=LR, bgcolor="white", pad="0.3", nodesep="0.4", ranksep="0.55", splines=polyline, fontname="Arial", label="Tenant Provisioning Control Plane — System Flow", labelloc=t, fontsize=18];
+  node [shape=box, style="rounded,filled", fillcolor="#F3F6FA", color="#6B7C93", fontname="Arial", fontsize=10, margin="0.16,0.1"];
+  edge [fontname="Arial", fontsize=9, color="#46566B", arrowsize=0.8];
+  client [label="API Client", fillcolor="#E8F1FF"];
+  api [label="Go Control Plane\nREST API", fillcolor="#DDEBFF"];
+  db [shape=cylinder, label="PostgreSQL\nTenants · Tasks · Outbox\nProcessed update IDs", fillcolor="#E5F6EB", color="#43845D"];
+  dispatch [label="Outbox Dispatcher\nRetry + publisher confirm", fillcolor="#FFF1D6", color="#B98935"];
+  tq [shape=cylinder, label="RabbitMQ Task Queue", fillcolor="#F2E8FF", color="#8767A8"];
+  worker [label="Go Worker Simulator\nConfigurable delay / fail rate", fillcolor="#DDEBFF"];
+  pq [shape=cylinder, label="RabbitMQ Progress Queue", fillcolor="#F2E8FF", color="#8767A8"];
+  consumer [label="Progress Consumer\nIdempotent + order tolerant", fillcolor="#FFF1D6", color="#B98935"];
+  dlq [shape=cylinder, label="Progress DLQ\nPoison messages", fillcolor="#FDE8E7", color="#B44C47"];
+  client -> api [label="REST / JSON"];
+  api -> db [label="transaction: tenant + task + outbox"];
+  db -> dispatch [label="committed outbox rows"];
+  dispatch -> tq [label="persistent event"];
+  tq -> worker [label="task"];
+  worker -> pq [label="progress events"];
+  pq -> consumer;
+  consumer -> db [label="dedupe + state transition"];
+  pq -> dlq [label="malformed", style=dashed, color="#B44C47"];
+}

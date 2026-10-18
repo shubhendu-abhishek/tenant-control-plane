@@ -1,0 +1,11 @@
+flowchart LR
+    Client[API Client] -->|REST / JSON| API[Go Control Plane]
+    API -->|One DB transaction: tenant + task + outbox| DB[(PostgreSQL)]
+    DB -->|Committed outbox rows| Dispatch[Outbox Dispatcher]
+    Dispatch -->|Persistent task event + publisher confirm| Tasks[(RabbitMQ task queue)]
+    Tasks --> Worker[Go Worker Simulator]
+    Worker -->|in_progress, then done or failed| Progress[(RabbitMQ progress queue)]
+    Progress --> Consumer[Progress Consumer]
+    Consumer -->|Transaction: dedupe + task + tenant| DB
+    Progress -. malformed message .-> DLQ[(Progress dead-letter queue)]
+    Client -->|GET tenants / tasks| API
