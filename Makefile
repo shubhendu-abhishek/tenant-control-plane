@@ -1,12 +1,19 @@
-.PHONY: check fmt vet test security build
+.PHONY: check fmt fmt-check vet test security build
 
 GO_FILES := $(shell find . -name '*.go' -not -path './vendor/*')
 
-# The repo's single quality-gate command: format, static analysis, then tests.
-check: fmt vet test
+# CI checks formatting without silently rewriting the checked-in source.
+check: fmt-check vet test
 
 fmt:
 	gofmt -w $(GO_FILES)
+
+fmt-check:
+	@unformatted="$$(gofmt -l $(GO_FILES))"; \
+	if [ -n "$$unformatted" ]; then \
+		printf 'These Go files need formatting:\n%s\nRun make fmt to fix them.\n' "$$unformatted"; \
+		exit 1; \
+	fi
 
 vet:
 	go vet ./...
