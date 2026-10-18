@@ -56,3 +56,22 @@ func TestWorkerHonorsDelayBounds(t *testing.T) {
 		t.Fatalf("fail-rate 0 should complete successfully, got %s", publisher.updates[1].Status)
 	}
 }
+
+
+func TestWorkerOutcomeIsStableAcrossTaskRedelivery(t *testing.T) {
+	publisher := &recordingPublisher{}
+	task := domain.Task{ID: "task-stable-outcome", TenantID: "tenant-456", Type: domain.TaskDeploy, Status: domain.TaskAccepted}
+	cfg := WorkerConfig{FailRate: 0.5, MinDelay: 0, MaxDelay: 0}
+
+	for attempt := 0; attempt < 10; attempt++ {
+		if err := processTask(context.Background(), publisher, task, cfg); err != nil {
+			t.Fatalf("process task on attempt %d: %v", attempt, err)
+		}
+	}
+	firstStatus := publisher.updates[1].Status
+	for i := 3; i < len(publisher.updates); i += 2 {
+		if publisher.updates[i].Status != firstStatus {
+			t.Fatalf("terminal outcome changed on redelivery: first=%s retry=%s", firstStatus, publisher.updates[i].Status)
+		}
+	}
+}

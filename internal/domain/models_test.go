@@ -17,7 +17,7 @@ func TestTimestampRoundTripUsesUTCMilliseconds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal progress update: %v", err)
 	}
-	if !strings.Contains(string(encoded), ` "occurred_at":"2026-10-18T10:34:56.123Z" `) {
+	if !strings.Contains(string(encoded), `"occurred_at":"2026-10-18T10:34:56.123Z"`) {
 		t.Fatalf("timestamp must be UTC with millisecond precision, got %s", encoded)
 	}
 	if got := time.Time(update.OccurredAt).Nanosecond(); got != 123000000 {

@@ -2,6 +2,8 @@ package messaging
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -287,7 +289,7 @@ func processTask(ctx context.Context, publisher ProgressPublisher, task domain.T
 		return ctx.Err()
 	}
 	status := domain.TaskDone
-	if rand.Float64() < cfg.FailRate {
+	if taskShouldFail(task.ID, cfg.FailRate) {
 		status = domain.TaskFailed
 	}
 	terminal := domain.ProgressUpdate{ID: task.ID + ":terminal", TaskID: task.ID, Status: status, OccurredAt: domain.NewTimestamp(time.Now())}
@@ -296,4 +298,20 @@ func processTask(ctx context.Context, publisher ProgressPublisher, task domain.T
 	}
 	slog.Info("simulated task complete", "task_id", task.ID, "tenant_id", task.TenantID, "task_type", task.Type, "status", status, "delay", delay)
 	return nil
+}
+
+
+// taskShouldFail derives a stable simulated outcome from the task ID. A task
+// redelivered after an uncertain broker acknowledgement must not randomly
+// switch from failed to done (or vice versa).
+func taskShouldFail(taskID string, failRate float64) bool {
+	if failRate <= 0 {
+		return false
+	}
+	if failRate >= 1 {
+		return true
+	}
+	sum := sha256.Sum256([]byte(taskID))
+	sample := binary.BigEndian.Uint64(sum[:8])
+	return float64(sample)/float64(^uint64(0)) < failRate
 }
