@@ -1,12 +1,9 @@
 FROM golang:1.23-alpine AS builder
 WORKDIR /src
 RUN apk add --no-cache ca-certificates make git build-base
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-# Generate and verify module checksums after source files are available.
-# Commit go.sum for reproducible local builds; this also keeps fresh CI builds bootable.
-RUN go mod tidy
 RUN mkdir -p /out && go build -trimpath -ldflags="-s -w" -o /out/control-plane ./cmd/control-plane \
  && go build -trimpath -ldflags="-s -w" -o /out/worker ./cmd/worker
 
